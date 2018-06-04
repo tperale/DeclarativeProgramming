@@ -116,7 +116,7 @@ test(variable_name) :-
   variable_decl_sym(["Variable"], []),
   phrase(variable_decl("q", range(12, 16)), ["Variable", "q", "lies", "between", 12, "and", 16]),
   phrase(variable_decl("q", range(1, 20)), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
-  phrase(variable_decl("q", range(12, 16)), ["q", "is", "between", 12, "and", 16]),
+  phrase(variable_decl("q", range(-12, 16)), ["q", "is", "between", -12, "and", 16]),
   phrase(variable_decl("q", range(100, 14)), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
 
 test(expr) :-
