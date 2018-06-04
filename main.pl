@@ -31,20 +31,22 @@ number(X) --> [X], {integer(X)}.
 number(X) --> [X], {string(X), number_string(_, X)}.
 
 % -- Variable declaration
-% variable_decl_sym --> []. TODO The case with nothing is not handled for now
 variable_decl_sym --> ["The", "variable"].
 variable_decl_sym --> ["Variable"].
 variable_decl_sym --> ["A", "variable"].
 variable_decl_sym --> [].
 
-range(X, Y) --> ["lies", "between"], number(X), ["and"], number(Y).
-range(X, Y) --> ["varies", "from"], number(X), ["to"], number(Y).
-range(X, Y) --> ["is", "in", "the", "range"], number(X), ["to"], number(Y).
-range(X, Y) --> ["is", "between"], number(X), ["and"], number(Y).
+range_start --> ["lies", "between"].
+range_start --> ["varies", "from"].
+range_start --> ["is", "in", "the", "range"].
+range_start --> ["is", "between"].
+range_connect --> ["and"].
+range_connect --> ["to"].
+range(X, Y) --> range_start, number(X), range_connect, number(Y), { X < Y }.
+range(Y, X) --> range_start, number(X), range_connect, number(Y), { X > Y }.
 
 variable_name(X) --> [X], {string_length(X, 1), char_type(X, alpha), char_type(X, lower)}.
 variable_decl(Var, range(X, Y)) --> variable_decl_sym, variable_name(Var), range(X, Y).
-% TODO Attention au cas où X > Y comme dans les exemples donnés au dessus (e.g: A variable x is in the range 100 to 14.)
 
 % -- Assignation
 assignation_sym --> ["equals"].
@@ -117,7 +119,7 @@ test(variable_name) :-
   phrase(variable_decl("q", range(12, 16)), ["Variable", "q", "lies", "between", 12, "and", 16]),
   phrase(variable_decl("q", range(1, 20)), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
   phrase(variable_decl("q", range(-12, 16)), ["q", "is", "between", -12, "and", 16]),
-  phrase(variable_decl("q", range(100, 14)), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
+  phrase(variable_decl("q", range(14, 100)), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
 
 test(expr) :-
   phrase(expr(1), [1]),
