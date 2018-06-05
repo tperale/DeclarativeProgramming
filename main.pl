@@ -24,6 +24,8 @@
 % x is greater than y times 2.
 % Variable y is greater than or equal to the quotient of z and 4.
 
+:- use_module(symbols).
+
 % --
 % -- MAIN PROGRAM
 % --
@@ -46,7 +48,7 @@ range(X, Y) --> range_start, number(X), range_connect, number(Y), { X < Y }.
 range(Y, X) --> range_start, number(X), range_connect, number(Y), { X > Y }.
 
 variable_name(X) --> [X], {string_length(X, 1), char_type(X, alpha), char_type(X, lower)}.
-variable_decl(Var, range(X, Y)) --> variable_decl_sym, variable_name(Var), range(X, Y).
+variable_decl(Var, range(X, Y)) --> variable_decl_sym, variable_name(Var), range(X, Y). % TODO Create variable in tree and add the range to it
 
 % -- Assignation
 assignation_sym --> ["equals"].
@@ -54,13 +56,15 @@ assignation_sym --> ["is"].
 assignation_sym --> ["contains"].
 assignation_sym --> ["holds"].
 
-comparaison(lte(X)) --> ["is", "less", "than", "or", "equal", "to"], expr(X).
-comparaison(lt(X)) --> ["is", "less", "than"], expr(X).
-comparaison(gte(X)) -->["is", "greater", "than", "or", "equal", "to"], expr(X).
-comparaison(gt(X)) --> ["is", "greater", "than"], expr(X).
+comparaison(lte(X)) --> [_, "less", "than", "or", "equal", "to"], expr(X).
+comparaison(lt(X)) --> [_, "less", "than"], expr(X).
+comparaison(gte(X)) -->[_, "greater", "than", "or", "equal", "to"], expr(X).
+comparaison(gt(X)) --> [_, "greater", "than"], expr(X).
 comparaison(X) --> assignation_sym, expr(X).
 
-assignation(X, Y) --> variable_decl_sym, variable_name(X), comparaison(Y).
+assignation(Var, Value) --> variable_decl_sym, variable_name(Var), comparaison(Value). % TODO Verify existance of variable in tree and add Y to the tree
+% assignation(X, Y) --> ["All", "these", "variables"], comparaison(Y). % TODO add Y to every component of the tree
+% assignation(X, Y) --> ["It"], comparaison(Y). % TODO add Y to every component of the tree
 
 % -- Expression declaration
 
@@ -98,11 +102,10 @@ expr(addition(X, Y)) --> addition(X, Y).
 % --
 % -- Line parsing part
 % --
-line(variable_decl(X, Y)) --> variable_decl(X, Y).
-line(assignation(X, Y)) --> assignation(X, Y).
-parse(Line, X) :-
-  phrase(line(X), Line).
-
+line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y), { add_variable_to_symtable(Sin, X, SoutTmp), add_operation_to_symtable(SoutTmp, X, Y, Sout) }.
+line(assignation(X, Y), Sin, Sout) --> assignation(X, Y), { variable_exist_in_symtable(Sin, X), add_operation_to_symtable(Sin, X, Y, Sout) }.
+parse(Line, X, Sin, Sout) :-
+  phrase(line(X, Sin, Sout), Line).
 
 % --
 % -- TEST
@@ -137,8 +140,8 @@ test(assignation) :-
   phrase(assignation("q", gte(division("z", 2))), ["q", "is", "greater", "than", "or", "equal", "to", "the", "quotient", "of", "z", "and", 2]),
   phrase(assignation("y", lt(addition(5, multiplication(2, "q")))), ["y", "is", "less", "than", 5, "+", 2, "*", "q"]).
 
-
 test(parsing) :-
-  parse(["x", "equals", "a", "plus", "b"], assignation("x", addition("a", "b"))),
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl("q", range(12, 16))),
-  parse(["The", "variable", "z", "is", "greater", "than", "b", "*", "c", "+", "e"], assignation("z", gt(multiplication("b", addition("c", "e"))))).
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl("q", range(12, 16)), [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 0, "to", -15], variable_decl("z", range(-15, 0)), X1, X2),
+  parse(["q", "equals", 1, "plus", "z"], assignation("q", addition(1, "z")), X2, X3),
+  parse(["The", "variable", "z", "is", "greater", "than", 5, "*", "q", "+", 12], assignation("z", gt(multiplication(5, addition("q", 12)))), X3, [("z", [gt(multiplication(5, addition("q", 12))), range(-15, 0)]),  ("q", [addition(1, "z"), range(12, 16)])]).
