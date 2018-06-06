@@ -7,9 +7,11 @@ replace(O, R, [H|T], [H|T2]) :- H \= O, replace(O, R, T, T2).
 empty_symtable(SymbolesOut) :- SymbolesOut = [].
 
 add_variable_to_symtable(Symboles, Var, SymbolesOut) :-
-  % TODO Should not already exist or raise an exception
   % TODO Should refer to real prolog variable ?
-  SymbolesOut = [(Var, []) | Symboles].
+  ( variable_exist_in_symtable(Symboles, Var)
+    -> throw(variable_already_exist)
+    ; SymbolesOut = [(Var, []) | Symboles]
+  ).
 
 add_operation_to_symtable(Symboles, Var, Operation, SymbolesOut) :-
   select((Var, FormerOperations), Symboles, Rest),
