@@ -17,6 +17,14 @@ add_operation_to_symtable(Symboles, Var, Operation, SymbolesOut) :-
   select((Var, FormerOperations), Symboles, Rest),
   SymbolesOut = [(Var, [Operation | FormerOperations]) | Rest].
 
+add_operation_to_var((Var, VarOperations), Operation, Out) :-
+  Out = (Var, [Operation | VarOperations]).
+
+add_operation_to_all([], _, []).
+add_operation_to_all([Symbole | Symboles], Operation, [Out | SymbolesOut]) :-
+   call(add_operation_to_var, Symbole, Operation, Out),
+   add_operation_to_all(Symboles, Operation, SymbolesOut).
+
 variable_exist_in_symtable(Symboles, Var) :- member((Var, _), Symboles).
 
 :- begin_tests(symbols).
@@ -28,7 +36,8 @@ test(add) :-
   add_variable_to_symtable([], "a", [("a", [])]).
 
 test(operation) :-
-  add_operation_to_symtable([("a", [])], "a", "foo", [("a", ["foo"])]).
+  add_operation_to_symtable([("a", [])], "a", "foo", [("a", ["foo"])]),
+  add_operation_to_all([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", ["foo"])]).
 
 test(member) :-
   variable_exist_in_symtable([("a", [])], "a").
