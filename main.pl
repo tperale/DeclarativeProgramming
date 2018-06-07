@@ -63,8 +63,8 @@ comparaison(gt(X)) --> [_, "greater", "than"], expr(X).
 comparaison(X) --> assignation_sym, expr(X).
 
 assignation(Var, Value) --> variable_decl_sym, variable_name(Var), comparaison(Value). % TODO Verify existance of variable in tree and add Y to the tree
-% assignation(X, Y) --> ["All", "these", "variables"], comparaison(Y). % TODO add Y to every component of the tree
-% assignation(X, Y) --> ["It"], comparaison(Y). % TODO add Y to every component of the tree
+assignation(all, Value) --> ["All", "these", "variables"], comparaison(Value). % TODO add Y to every component of the tree
+assignation(it, Value) --> ["It"], comparaison(Value). % TODO add Y to every component of the tree
 
 % -- Expression declaration
 
@@ -103,7 +103,9 @@ expr(addition(X, Y)) --> addition(X, Y).
 % -- Line parsing part
 % --
 line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y), { add_variable_to_symtable(Sin, X, SoutTmp), add_operation_to_symtable(SoutTmp, X, Y, Sout) }.
-line(assignation(X, Y), Sin, Sout) --> assignation(X, Y), { variable_exist_in_symtable(Sin, X), add_operation_to_symtable(Sin, X, Y, Sout) }.
+line(assignation(all, Y), Sin, Sout) --> assignation(all, Y), { add_operation_to_all(Sin, Y, Sout) }. % TODO Handle the variable in the assignation expr.
+line(assignation(it, Y), Sin, Sout) --> assignation(it, Y), { add_operation_to_last(Sin, Y, Sout) }. % TODO Handle the variable in the assignation expr.
+line(assignation(X, Y), Sin, Sout) --> assignation(X, Y), { variable_exist_in_symtable(Sin, X), add_operation_to_symtable(Sin, X, Y, Sout) }. % TODO Handle the variable in the assignation expr.
 parse(Line, X, Sin, Sout) :-
   phrase(line(X, Sin, Sout), Line).
 

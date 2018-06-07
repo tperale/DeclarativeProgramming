@@ -1,4 +1,4 @@
-:- module(symbols, [empty_symtable/1, add_variable_to_symtable/3, add_operation_to_symtable/4, variable_exist_in_symtable/2]).
+:- module(symbols, [empty_symtable/1, add_variable_to_symtable/3, add_operation_to_symtable/4, variable_exist_in_symtable/2, add_operation_to_all/3, add_operation_to_last/3]).
 
 replace(_, _, [], []).
 replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
@@ -22,8 +22,11 @@ add_operation_to_var((Var, VarOperations), Operation, Out) :-
 
 add_operation_to_all([], _, []).
 add_operation_to_all([Symbole | Symboles], Operation, [Out | SymbolesOut]) :-
-   call(add_operation_to_var, Symbole, Operation, Out),
-   add_operation_to_all(Symboles, Operation, SymbolesOut).
+  call(add_operation_to_var, Symbole, Operation, Out),
+  add_operation_to_all(Symboles, Operation, SymbolesOut).
+
+add_operation_to_last([(Var, Operations) | Symboles], Operation, Out) :-
+  Out = [ (Var, [Operation | Operations]) | Symboles ].
 
 variable_exist_in_symtable(Symboles, Var) :- member((Var, _), Symboles).
 
@@ -37,7 +40,8 @@ test(add) :-
 
 test(operation) :-
   add_operation_to_symtable([("a", [])], "a", "foo", [("a", ["foo"])]),
-  add_operation_to_all([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", ["foo"])]).
+  add_operation_to_all([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", ["foo"])]),
+  add_operation_to_last([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", [])]).
 
 test(member) :-
   variable_exist_in_symtable([("a", [])], "a").
