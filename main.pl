@@ -26,7 +26,7 @@ variable_name(X) --> [X], {string_length(X, 1), char_type(X, alpha), char_type(X
 
 variable_decl(Var, range(X, Y), Sin, Sout) --> variable_decl_sym, variable_name(VarName), range(Var, X, Y), { add_variable_to_symtable(Sin, VarName, Var, Sout) }.
 
-% -- Expression declaration
+% -- Assignation
 term(X, _) --> number(X). % TODO return real numbers
 term(Var, Sin) --> variable_name(X), { variable_exist_in_symtable(Sin, X, Var) }. % Retrieve prolog variable from variable name
 
@@ -64,21 +64,20 @@ assignation_sym --> ["is"].
 assignation_sym --> ["contains"].
 assignation_sym --> ["holds"].
 
-comparaison(Var, Sin) --> [_, "less", "than", "or", "equal", "to"], expr(X, Sin), { Var #=< X }.
-comparaison(Var, Sin) --> [_, "less", "than"], expr(X, Sin), { Var #< X }.
-comparaison(Var, Sin) -->[_, "greater", "than", "or", "equal", "to"], expr(X, Sin), { Var #=< X }.
-comparaison(Var, Sin) --> [_, "greater", "than"], expr(X, Sin), { Var #> X }.
-comparaison(Var, Sin) --> assignation_sym, expr(X, Sin), { Var #= X }.
+comparaison(#=<) --> [_, "less", "than", "or", "equal", "to"].
+comparaison(#<) --> [_, "less", "than"].
+comparaison(#>=) -->[_, "greater", "than", "or", "equal", "to"].
+comparaison(#>) --> [_, "greater", "than"].
+comparaison(#=) --> assignation_sym.
 
-assignation(VarName, Var, Sin) --> variable_decl_sym, variable_name(VarName), comparaison(Var, Sin), { variable_exist_in_symtable(Sin, VarName, Var) }.
-% assignation(all, Value, Sin) --> ["All", "these", "variables"], comparaison(Value), {}.
-assignation(VarName, Var, Sin) --> ["It"], comparaison(Var, Sin), { [(VarName, Var) | _] = Sin }.
+assignation(VarName, Var, Sin) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X) }.
+assignation(none, _, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
+assignation(VarName, Var, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { [(VarName, Var) | _] = Sin, call(CompFun, Var, X) }.
 
 % --
 % -- Line parsing part
 % --
 line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y, Sin, Sout).
-% line(assignation(all, Y), Sin, Sout) --> assignation(all, Y), { add_operation_to_all(Sin, Y, Sout) }. % TODO Handle the variable in the assignation expr.
 line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), { reorder_first_in_symtable(Sin, VarName, Sout) }.
 parse(Line, X, Sin, Sout) :-
   phrase(line(X, Sin, Sout), Line).
@@ -141,6 +140,11 @@ test(parsing_base_2) :-
   parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
   parse(["Variable", "q", "is", "greater", "than", "or", "equal", "to", "z", "/", "1"], _, X2, _).
+
+test(parsing_base_3) :-
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
+  parse(["All", "these", "variables", "are", "greater", "than", "12"], _, X2, _).
 
 test(parsing_text_1) :-
   parse_text("Variable q lies between 12 and 16
