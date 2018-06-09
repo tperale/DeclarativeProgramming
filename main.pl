@@ -161,12 +161,12 @@ y is less than 5 + 2 * x
 x is greater than y times 2
 Variable y is greater than or equal to the quotient of z and 4", _).
 
-% test(parsing_text_3_with_all) :-
-%   parse_text("The variable x lies between 0 and 10
-% Variable y varies from 10 to -10
-% A variable z is in the range 0 to 15
-% It equals x plus y
-% All these variables are greater than -20
-% y is less than 5 + 2 * x
-% x is greater than y times 2
-% Variable y is greater than or equal to the quotient of z and 4", Out).
+test(parsing_text_3_with_all) :-
+  parse_text("The variable x lies between 0 and 10
+Variable y varies from 10 to -10
+A variable z is in the range 0 to 15
+It equals x plus y
+All these variables are greater than -20
+y is less than 5 + 2 * x
+x is greater than y times 2
+Variable y is greater than or equal to the quotient of z and 4", _).
