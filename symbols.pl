@@ -1,34 +1,18 @@
-:- module(symbols, [empty_symtable/1, add_variable_to_symtable/3, add_operation_to_symtable/4, variable_exist_in_symtable/2, add_operation_to_all/3, add_operation_to_last/3]).
+:- module(symbols, [empty_symtable/1, add_variable_to_symtable/4, variable_exist_in_symtable/3, reorder_first_in_symtable/3]).
 
-replace(_, _, [], []).
-replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
-replace(O, R, [H|T], [H|T2]) :- H \= O, replace(O, R, T, T2).
+empty_symtable(X) :- X = [].
 
-empty_symtable(SymbolesOut) :- SymbolesOut = [].
-
-add_variable_to_symtable(Symboles, Var, SymbolesOut) :-
-  % TODO Should refer to real prolog variable ?
-  ( variable_exist_in_symtable(Symboles, Var)
+add_variable_to_symtable(Symboles, VarName, Var, SymbolesOut) :-
+  ( variable_exist_in_symtable(Symboles, VarName, _)
     -> throw(variable_already_exist)
-    ; SymbolesOut = [(Var, []) | Symboles]
+    ; SymbolesOut = [(VarName, Var) | Symboles]
   ).
 
-add_operation_to_symtable(Symboles, Var, Operation, SymbolesOut) :-
-  select((Var, FormerOperations), Symboles, Rest),
-  SymbolesOut = [(Var, [Operation | FormerOperations]) | Rest].
+reorder_first_in_symtable(Symboles, VarName, SymbolesOut) :-
+ select((VarName, Var), Symboles, Rest),
+ SymbolesOut = [(VarName, Var) | Rest].
 
-add_operation_to_var((Var, VarOperations), Operation, Out) :-
-  Out = (Var, [Operation | VarOperations]).
-
-add_operation_to_all([], _, []).
-add_operation_to_all([Symbole | Symboles], Operation, [Out | SymbolesOut]) :-
-  call(add_operation_to_var, Symbole, Operation, Out),
-  add_operation_to_all(Symboles, Operation, SymbolesOut).
-
-add_operation_to_last([(Var, Operations) | Symboles], Operation, Out) :-
-  Out = [ (Var, [Operation | Operations]) | Symboles ].
-
-variable_exist_in_symtable(Symboles, Var) :- member((Var, _), Symboles).
+variable_exist_in_symtable(Symboles, VarName, Var) :- member((VarName, Var), Symboles).
 
 :- begin_tests(symbols).
 
@@ -36,12 +20,10 @@ test(creation) :-
   empty_symtable([]).
 
 test(add) :-
-  add_variable_to_symtable([], "a", [("a", [])]).
+  add_variable_to_symtable([], "a", Var, [("a", Var)]).
 
-test(operation) :-
-  add_operation_to_symtable([("a", [])], "a", "foo", [("a", ["foo"])]),
-  add_operation_to_all([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", ["foo"])]),
-  add_operation_to_last([("a", []), ("b", [])], "foo", [("a", ["foo"]), ("b", [])]).
+test(existance) :-
+  variable_exist_in_symtable([("a", Var)], "a", Var).
 
-test(member) :-
-  variable_exist_in_symtable([("a", [])], "a").
+test(reorder) :-
+  reorder_first_in_symtable([("a", _), ("b", _)], "b", [("b", _), ("a", _)]).
