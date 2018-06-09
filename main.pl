@@ -59,16 +59,14 @@ expr(X - Y, Sin) --> substraction(X, Y, Sin).
 expr(X + Y, Sin) --> addition(X, Y, Sin).
 
 % -- Assignation
-assignation_sym --> ["equals"].
-assignation_sym --> ["is"].
-assignation_sym --> ["contains"].
-assignation_sym --> ["holds"].
-
 comparaison(#=<) --> [_, "less", "than", "or", "equal", "to"].
 comparaison(#<) --> [_, "less", "than"].
 comparaison(#>=) -->[_, "greater", "than", "or", "equal", "to"].
 comparaison(#>) --> [_, "greater", "than"].
-comparaison(#=) --> assignation_sym.
+comparaison(#=) --> ["equals"].
+comparaison(#=) --> ["is"].
+comparaison(#=) --> ["contains"].
+comparaison(#=) --> ["holds"].
 
 assignation(VarName, Var, Sin) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X) }.
 assignation(none, _, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
