@@ -77,8 +77,11 @@ assignation(VarName, Var, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), {
 % --
 % -- Line parsing part
 % --
-line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y, Sin, Sout).
-line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), { reorder_first_in_symtable(Sin, VarName, Sout) }.
+line_end --> ["."].
+line_end --> [].
+
+line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y, Sin, Sout), line_end.
+line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), line_end, { reorder_first_in_symtable(Sin, VarName, Sout) }.
 parse(Line, X, Sin, Sout) :-
   phrase(line(X, Sin, Sout), Line).
 
