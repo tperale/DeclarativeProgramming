@@ -80,13 +80,35 @@ line_end --> [].
 
 line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y, Sin, Sout), line_end.
 line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), line_end, { reorder_first_in_symtable(Sin, VarName, Sout) }.
+
+%% parse(+Line:[string], +Sin, -Sout)
+%
+% parse/3
+%
+% @param Line A single sentence from a linear programming description with each words separeted in a list.
+% @param Sin The current symbol table to use to parse this line.
+% @param Sout The symbol table at the end of the parsing procedure.
 parse(Line, X, Sin, Sout) :-
   phrase(line(X, Sin, Sout), Line).
 
+%% parse_line(+Line:string, +Sin, -Sout)
+%
+% parse_line/3 Parse a single line of a whole linear programming description.
+%
+% @param Line A single sentence from a linear programming description.
+% @param Sin The current symbol table to use to parse this line.
+% @param Sout The symbol table at the end of the parsing procedure.
 parse_line(Line, Sin, Sout) :-
   split_string(Line, " ", "", WordList),
   parse(WordList, _, Sin, Sout).
 
+%% parse_text(+Text:string, -Out)
+%
+% parse_text/2 parse a text describing a linear program as stated in the
+% assignment .pdf. Each sentence are separeted by a "\n".
+%
+% @param Text The whole linear program sentences.
+% @param Out The symbol table grouping the variables found during the parsing.
 parse_text(Text, Out) :-
   split_string(Text, "\n", " ", LineList),
   empty_symtable(X),
