@@ -69,8 +69,8 @@ comparaison(#=) --> ["contains"].
 comparaison(#=) --> ["holds"].
 
 assignation(Sin, Sout) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X), reorder_first_in_symtable(Sin, VarName, Sout) }.
-assignation(Sin, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
-assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_first_symbole(Sin, First), (_, Var) = First, call(CompFun, Var, X) }.
+assignation(Sin, Sout) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X), mark_operation_all(Sin, Sout) }.
+assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_last_symbole(Sin, First), (_, Var) = First, call(CompFun, Var, X) }.
 
 % --
 % -- Line parsing part
@@ -127,50 +127,55 @@ test(variable_name) :-
   phrase(variable_name("q"), ["q"]).
 
 test(variable_decl) :-
-  phrase(variable_decl([], [("q", _)]), ["Variable", "q", "lies", "between", 12, "and", 16]),
-  phrase(variable_decl([], [("q", _)]), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
-  phrase(variable_decl([], [("q", _)]), ["q", "is", "between", -12, "and", 16]),
-  phrase(variable_decl([], [("q", _)]), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
+  empty_symtable(X),
+  phrase(variable_decl(X, [[("q", _)], _]), ["Variable", "q", "lies", "between", 12, "and", 16]),
+  phrase(variable_decl(X, [[("q", _)], _]), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
+  phrase(variable_decl(X, [[("q", _)], _]), ["q", "is", "between", -12, "and", 16]),
+  phrase(variable_decl(X, [[("q", _)], _]), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
 
 test(expr) :-
-  phrase(expr(1, []), [1]),
-  phrase(expr(1 // 2, []), [1, "/", 2]),
-  phrase(expr(1 + 2, []), [1, "+", 2]),
-  phrase(expr(1 - 2, []), [1, "minus", 2]),
-  phrase(expr(X, [("q", X)]), ["q", "plus", 2]),
-  phrase(expr(Y, [("q", Y)]), ["q", "plus", 2, "*", 4]),
-  phrase(expr(Z, [("q", Z)]), ["q", "/", 2]).
+  empty_symtable(E),
+  phrase(expr(1, E), [1]),
+  phrase(expr(1 // 2, E), [1, "/", 2]),
+  phrase(expr(1 + 2, E), [1, "+", 2]),
+  phrase(expr(1 - 2, E), [1, "minus", 2]),
+  phrase(expr(X, [[("q", X)], _]), ["q", "plus", 2]),
+  phrase(expr(Y, [[("q", Y)], _]), ["q", "plus", 2, "*", 4]),
+  phrase(expr(Z, [[("q", Z)], _]), ["q", "/", 2]).
 
 test(assignation) :-
-  phrase(assignation([("z", Z), ("b", _), ("c", _)], [("z", Z), ("b", _), ("c", _)]), ["The", "variable", "z", "contains", "the", "product", "of", "b", "and", "c"]),
-  phrase(assignation([("z", ZZ), ("b", _), ("c", _)], [("z", ZZ), ("b", _), ("c", _)]), ["z", "contains", "the", "product", "of", "b", "and", "c"]),
-  phrase(assignation([("x", X), ("a", _), ("b", _)], [("x", X), ("a", _), ("b", _)]), ["x", "equals", "a", "plus", "b"]),
-  phrase(assignation([("x", XX), ("c", _)], [("x", XX), ("c", _)]), ["x", "is", "c", "times", 2]).
+  phrase(assignation([[("z", Z), ("b", _), ("c", _)], _], [[("z", Z), ("b", _), ("c", _)], _]), ["The", "variable", "z", "contains", "the", "product", "of", "b", "and", "c"]),
+  phrase(assignation([[("z", ZZ), ("b", _), ("c", _)], _], [[("z", ZZ), ("b", _), ("c", _)], _]), ["z", "contains", "the", "product", "of", "b", "and", "c"]),
+  phrase(assignation([[("x", X), ("a", _), ("b", _)], _], [[("x", X), ("a", _), ("b", _)], _]), ["x", "equals", "a", "plus", "b"]),
+  phrase(assignation([[("x", XX), ("c", _)], _], [[("x", XX), ("c", _)], _]), ["x", "is", "c", "times", 2]).
 
 test(parsing_base) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  empty_symtable(X),
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], X, X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
   parse(["q", "equals", 1, "plus", "z"], X2, X3),
-  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], X3, [("z", Z), ("q", Q)]),
+  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], X3, [[("z", Z), ("q", Q)], 0]),
   fd_inf(Q, 12),
   fd_sup(Q, 15),
   fd_inf(Z, 11),
   fd_sup(Z, 14).
 
 test(parsing_it) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  empty_symtable(X),
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], X, X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
   parse(["It", "is", "greater", "than", 2, "*", "q", "-", 12], X2, X3),
-  parse(["q", "equals", 1, "plus", "z"], X3, [("q", Q), ("z", Z)]),
+  parse(["q", "equals", 1, "plus", "z"], X3, [[("q", Q), ("z", Z)], 0]),
   fd_inf(Q, 12),
   fd_sup(Q, 15),
   fd_inf(Z, 11),
   fd_sup(Z, 14).
 
 test(parsing_all) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  empty_symtable(X),
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], X, X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
-  parse(["All", "these", "variables","are", "greater", "than", "or", "equal", "to", "z", "/", "1"], X2, [("z", Z),  ("q", Q)]),
+  parse(["All", "these", "variables","are", "greater", "than", "or", "equal", "to", "z", "/", "1"], X2, [[("z", Z),  ("q", Q)], 1]),
   fd_inf(Q, 12),
   fd_sup(Q, 16),
   fd_inf(Z, -15),
@@ -181,7 +186,7 @@ test(parsing_text_1) :-
 A variable z is in the range 14 to -15
 It is greater than 2 * q - 12
 q equals 1 plus z
-All these variables are greater than 12", [("q", Q), ("z", Z)]),
+All these variables are greater than 12", [[("q", Q), ("z", Z)], 1]),
   fd_inf(Q, 14),
   fd_sup(Q, 15),
   fd_inf(Z, 13),
@@ -194,7 +199,7 @@ A variable z is in the range 0 to 15
 It equals x plus y
 y is less than 5 + 2 * x
 x is greater than y times 2
-Variable y is greater than or equal to the quotient of z and 4", [("y", Y),  ("x", X),  ("z", Z)]),
+Variable y is greater than or equal to the quotient of z and 4", [[("y", Y),  ("x", X),  ("z", Z)], 0]),
   fd_inf(Y, 0),
   fd_sup(Y, 4),
   fd_inf(X, 1),
@@ -210,7 +215,7 @@ It equals x plus y
 All these variables are greater than -20
 y is less than 5 + 2 * x
 x is greater than y times 2
-Variable y is greater than or equal to the quotient of z and 4",  [("y", Y),  ("x", X),  ("z", Z)]),
+Variable y is greater than or equal to the quotient of z and 4",  [[("y", Y),  ("x", X),  ("z", Z)], 0]),
   fd_inf(Y, 0),
   fd_sup(Y, 4),
   fd_inf(X, 1),
