@@ -19,12 +19,12 @@ range_start --> ["is", "in", "the", "range"].
 range_start --> ["is", "between"].
 range_connect --> ["and"].
 range_connect --> ["to"].
-range(Var, Min, Max) --> range_start, number(X), range_connect, number(Y), { Min is min(X,Y), Max is max(X, Y), Var in Min..Max }.
+range(Var) --> range_start, number(X), range_connect, number(Y), { Min is min(X,Y), Max is max(X, Y), Var in Min..Max }.
 
 % Validation of the variable name
 variable_name(X) --> [X], {string_length(X, 1), char_type(X, alpha), char_type(X, lower)}.
 
-variable_decl(Var, range(X, Y), Sin, Sout) --> variable_decl_sym, variable_name(VarName), range(Var, X, Y), { add_variable_to_symtable(Sin, VarName, Var, Sout) }.
+variable_decl(Sin, Sout) --> variable_decl_sym, variable_name(VarName), range(Var), { add_variable_to_symtable(Sin, VarName, Var, Sout) }.
 
 % -- Assignation
 term(X, _) --> number(X). % TODO return real numbers
@@ -68,9 +68,9 @@ comparaison(#=) --> ["is"].
 comparaison(#=) --> ["contains"].
 comparaison(#=) --> ["holds"].
 
-assignation(VarName, Var, Sin) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X) }.
-assignation(none, _, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
-assignation(VarName, Var, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { [(VarName, Var) | _] = Sin, call(CompFun, Var, X) }.
+assignation(Sin, Sout) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X), reorder_first_in_symtable(Sin, VarName, Sout) }.
+assignation(Sin, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
+assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { [(_, Var) | _] = Sin, call(CompFun, Var, X) }.
 
 % --
 % -- Line parsing part
@@ -78,8 +78,8 @@ assignation(VarName, Var, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), {
 line_end --> ["."].
 line_end --> [].
 
-line(variable_decl(X, Y), Sin, Sout) --> variable_decl(X, Y, Sin, Sout), line_end.
-line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), line_end, { reorder_first_in_symtable(Sin, VarName, Sout) }.
+line(Sin, Sout) --> variable_decl(Sin, Sout), line_end.
+line(Sin, Sout) --> assignation(Sin, Sout), line_end.
 
 %% parse(+Line:[string], +Sin, -Sout)
 %
@@ -88,8 +88,8 @@ line(assignation(VarName, Var), Sin, Sout) --> assignation(VarName, Var, Sin), l
 % @param Line A single sentence from a linear programming description with each words separeted in a list.
 % @param Sin The current symbol table to use to parse this line.
 % @param Sout The symbol table at the end of the parsing procedure.
-parse(Line, X, Sin, Sout) :-
-  phrase(line(X, Sin, Sout), Line).
+parse(Line, Sin, Sout) :-
+  phrase(line(Sin, Sout), Line).
 
 %% parse_line(+Line:string, +Sin, -Sout)
 %
@@ -100,7 +100,7 @@ parse(Line, X, Sin, Sout) :-
 % @param Sout The symbol table at the end of the parsing procedure.
 parse_line(Line, Sin, Sout) :-
   split_string(Line, " ", "", WordList),
-  parse(WordList, _, Sin, Sout).
+  parse(WordList, Sin, Sout).
 
 %% parse_text(+Text:string, -Out)
 %
@@ -127,10 +127,10 @@ test(variable_name) :-
   phrase(variable_name("q"), ["q"]).
 
 test(variable_decl) :-
-  phrase(variable_decl(X, range(12, 16), [], [("q", X)]), ["Variable", "q", "lies", "between", 12, "and", 16]),
-  phrase(variable_decl(X, range(1, 20), [], [("q", X)]), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
-  phrase(variable_decl(X, range(-12, 16), [], [("q", X)]), ["q", "is", "between", -12, "and", 16]),
-  phrase(variable_decl(X, range(14, 100), [], [("q", X)]), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
+  phrase(variable_decl([], [("q", _)]), ["Variable", "q", "lies", "between", 12, "and", 16]),
+  phrase(variable_decl([], [("q", _)]), ["A", "variable", "q", "varies", "from", 1, "to", 20]),
+  phrase(variable_decl([], [("q", _)]), ["q", "is", "between", -12, "and", 16]),
+  phrase(variable_decl([], [("q", _)]), ["The", "variable", "q", "is", "in", "the", "range", 100, "to", 14]).
 
 test(expr) :-
   phrase(expr(1, []), [1]),
@@ -142,32 +142,32 @@ test(expr) :-
   phrase(expr(Z, [("q", Z)]), ["q", "/", 2]).
 
 test(assignation) :-
-  phrase(assignation("z", Z, [("z", Z), ("b", _), ("c", _)]), ["The", "variable", "z", "contains", "the", "product", "of", "b", "and", "c"]),
-  phrase(assignation("z", ZZ, [("z", ZZ), ("b", _), ("c", _)]), ["z", "contains", "the", "product", "of", "b", "and", "c"]),
-  phrase(assignation("x", X, [("x", X), ("a", _), ("b", _)]), ["x", "equals", "a", "plus", "b"]),
-  phrase(assignation("x", XX, [("x", XX), ("c", _)]), ["x", "is", "c", "times", 2]).
+  phrase(assignation([("z", Z), ("b", _), ("c", _)], [("z", Z), ("b", _), ("c", _)]), ["The", "variable", "z", "contains", "the", "product", "of", "b", "and", "c"]),
+  phrase(assignation([("z", ZZ), ("b", _), ("c", _)], [("z", ZZ), ("b", _), ("c", _)]), ["z", "contains", "the", "product", "of", "b", "and", "c"]),
+  phrase(assignation([("x", X), ("a", _), ("b", _)], [("x", X), ("a", _), ("b", _)]), ["x", "equals", "a", "plus", "b"]),
+  phrase(assignation([("x", XX), ("c", _)], [("x", XX), ("c", _)]), ["x", "is", "c", "times", 2]).
 
 test(parsing_base) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
-  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
-  parse(["q", "equals", 1, "plus", "z"], _, X2, X3),
-  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], _, X3, [("z", _), ("q", _)]).
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
+  parse(["q", "equals", 1, "plus", "z"], X2, X3),
+  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], X3, [("z", _), ("q", _)]).
 
 test(parsing_it) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
-  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
-  parse(["It", "is", "greater", "than", 2, "*", "q", "-", 12], _, X2, X3),
-  parse(["q", "equals", 1, "plus", "z"], _, X3, [("q", _), ("z", _)]).
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
+  parse(["It", "is", "greater", "than", 2, "*", "q", "-", 12], X2, X3),
+  parse(["q", "equals", 1, "plus", "z"], X3, [("q", _), ("z", _)]).
 
 test(parsing_base_2) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
-  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
-  parse(["Variable", "q", "is", "greater", "than", "or", "equal", "to", "z", "/", "1"], _, X2, _).
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
+  parse(["Variable", "q", "is", "greater", "than", "or", "equal", "to", "z", "/", "1"], X2, _).
 
 test(parsing_base_3) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], variable_decl(_, range(12, 16)), [], X1),
-  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], variable_decl(_, range(-15, 14)), X1, X2),
-  parse(["All", "these", "variables", "are", "greater", "than", "12"], _, X2, _).
+  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
+  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
+  parse(["All", "these", "variables", "are", "greater", "than", "12"], X2, _).
 
 test(parsing_text_1) :-
   parse_text("Variable q lies between 12 and 16
