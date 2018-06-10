@@ -1,5 +1,6 @@
 :- use_module(library(clpfd)).
 :- use_module(symbols).
+:- use_module(report).
 
 % --
 % -- MAIN PROGRAM
@@ -113,6 +114,10 @@ parse_text(Text, Out) :-
   split_string(Text, "\n", " ", LineList),
   empty_symtable(X),
   foldl(parse_line, LineList, X, Out).
+
+solve(Text) :-
+  parse_text(Text, Out),
+  print_report(Out).
 
 % --
 % -- TEST
