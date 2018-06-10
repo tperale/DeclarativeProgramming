@@ -70,7 +70,7 @@ comparaison(#=) --> ["holds"].
 
 assignation(Sin, Sout) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X), reorder_first_in_symtable(Sin, VarName, Sout) }.
 assignation(Sin, Sin) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X) }.
-assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { [(_, Var) | _] = Sin, call(CompFun, Var, X) }.
+assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_first_symbole(Sin, First), (_, Var) = First, call(CompFun, Var, X) }.
 
 % --
 % -- Line parsing part

@@ -1,4 +1,4 @@
-:- module(symbols, [empty_symtable/1, add_variable_to_symtable/4, variable_exist_in_symtable/3, reorder_first_in_symtable/3, apply_to_all_symboles/3]).
+:- module(symbols, [empty_symtable/1, add_variable_to_symtable/4, variable_exist_in_symtable/3, reorder_first_in_symtable/3, apply_to_all_symboles/3, take_first_symbole/2]).
 
 %% empty_symtable(-X:[])
 %
@@ -53,6 +53,9 @@ apply_to_all_symboles([], _, _).
 apply_to_all_symboles([(_, Var) | Symboles], Comp, With) :-
   call(Comp, Var, With),
   apply_to_all_symboles(Symboles, Comp, With).
+
+take_first_symbole(Symboles, Symbole) :-
+  [Symbole | _ ] = Symboles.
 
 :- begin_tests(symbols).
 
