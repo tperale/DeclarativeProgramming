@@ -151,29 +151,41 @@ test(parsing_base) :-
   parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
   parse(["q", "equals", 1, "plus", "z"], X2, X3),
-  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], X3, [("z", _), ("q", _)]).
+  parse(["The", "variable", "z", "is", "greater", "than", 2, "*", "q", "-", 12], X3, [("z", Z), ("q", Q)]),
+  fd_inf(Q, 12),
+  fd_sup(Q, 15),
+  fd_inf(Z, 11),
+  fd_sup(Z, 14).
 
 test(parsing_it) :-
   parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
   parse(["It", "is", "greater", "than", 2, "*", "q", "-", 12], X2, X3),
-  parse(["q", "equals", 1, "plus", "z"], X3, [("q", _), ("z", _)]).
+  parse(["q", "equals", 1, "plus", "z"], X3, [("q", Q), ("z", Z)]),
+  fd_inf(Q, 12),
+  fd_sup(Q, 15),
+  fd_inf(Z, 11),
+  fd_sup(Z, 14).
 
-test(parsing_base_2) :-
+test(parsing_all) :-
   parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
   parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
-  parse(["Variable", "q", "is", "greater", "than", "or", "equal", "to", "z", "/", "1"], X2, _).
-
-test(parsing_base_3) :-
-  parse(["Variable", "q", "lies", "between", 12, "and", 16], [], X1),
-  parse(["A", "variable", "z", "is", "in", "the",  "range", 14, "to", -15], X1, X2),
-  parse(["All", "these", "variables", "are", "greater", "than", "12"], X2, _).
+  parse(["All", "these", "variables","are", "greater", "than", "or", "equal", "to", "z", "/", "1"], X2, [("z", Z),  ("q", Q)]),
+  fd_inf(Q, 12),
+  fd_sup(Q, 16),
+  fd_inf(Z, -15),
+  fd_sup(Z, 14).
 
 test(parsing_text_1) :-
   parse_text("Variable q lies between 12 and 16
 A variable z is in the range 14 to -15
 It is greater than 2 * q - 12
-q equals 1 plus z", [("q", _), ("z", _)]).
+q equals 1 plus z
+All these variables are greater than 12", [("q", Q), ("z", Z)]),
+  fd_inf(Q, 14),
+  fd_sup(Q, 15),
+  fd_inf(Z, 13),
+  fd_sup(Z, 14).
 
 test(parsing_text_2) :-
   parse_text("The variable x lies between 0 and 10
@@ -182,7 +194,13 @@ A variable z is in the range 0 to 15
 It equals x plus y
 y is less than 5 + 2 * x
 x is greater than y times 2
-Variable y is greater than or equal to the quotient of z and 4", _).
+Variable y is greater than or equal to the quotient of z and 4", [("y", Y),  ("x", X),  ("z", Z)]),
+  fd_inf(Y, 0),
+  fd_sup(Y, 4),
+  fd_inf(X, 1),
+  fd_sup(X, 10),
+  fd_inf(Z, 1),
+  fd_sup(Z, 14).
 
 test(parsing_text_3_with_all) :-
   parse_text("The variable x lies between 0 and 10
@@ -192,4 +210,10 @@ It equals x plus y
 All these variables are greater than -20
 y is less than 5 + 2 * x
 x is greater than y times 2
-Variable y is greater than or equal to the quotient of z and 4", _).
+Variable y is greater than or equal to the quotient of z and 4",  [("y", Y),  ("x", X),  ("z", Z)]),
+  fd_inf(Y, 0),
+  fd_sup(Y, 4),
+  fd_inf(X, 1),
+  fd_sup(X, 10),
+  fd_inf(Z, 1),
+  fd_sup(Z, 14).
