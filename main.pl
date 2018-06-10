@@ -117,7 +117,7 @@ parse_text(Text, Out) :-
 
 solve(Text) :-
   parse_text(Text, Out),
-  print_report(Out).
+  print_report(Out), !.
 
 % --
 % -- TEST
