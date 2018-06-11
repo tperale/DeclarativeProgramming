@@ -54,8 +54,8 @@ substraction_sym --> ["minus"].
 substraction(X, Y, Sin) --> term(X, Sin), substraction_sym, expr(Y, Sin).
 
 expr(X, Sin) --> term(X, Sin).
-expr(X // Y, Sin) --> division(X, Y, Sin).
-expr(X * Y, Sin) --> multiplication(X, Y, Sin).
+expr((X // Y), Sin) --> division(X, Y, Sin).
+expr((X * Y), Sin) --> multiplication(X, Y, Sin).
 expr(X - Y, Sin) --> substraction(X, Y, Sin).
 expr(X + Y, Sin) --> addition(X, Y, Sin).
 
@@ -76,11 +76,8 @@ assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_las
 % --
 % -- Line parsing part
 % --
-line_end --> ["."].
-line_end --> [].
-
-line(Sin, Sout) --> variable_decl(Sin, Sout), line_end.
-line(Sin, Sout) --> assignation(Sin, Sout), line_end.
+line(Sin, Sout) --> variable_decl(Sin, Sout).
+line(Sin, Sout) --> assignation(Sin, Sout).
 
 %% parse(+Line:[string], +Sin, -Sout)
 %
@@ -100,7 +97,7 @@ parse(Line, Sin, Sout) :-
 % @param Sin The current symbol table to use to parse this line.
 % @param Sout The symbol table at the end of the parsing procedure.
 parse_line(Line, Sin, Sout) :-
-  split_string(Line, " ", "", WordList),
+  split_string(Line, " ", ".", WordList),
   parse(WordList, Sin, Sout).
 
 %% parse_text(+Text:string, -Out)
