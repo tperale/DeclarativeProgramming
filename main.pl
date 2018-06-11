@@ -25,7 +25,7 @@ range(Var) --> range_start, number(X), range_connect, number(Y), { Min is min(X,
 % Validation of the variable name
 variable_name(X) --> [X], {string_length(X, 1), char_type(X, alpha), char_type(X, lower)}.
 
-variable_decl(Sin, Sout) --> variable_decl_sym, variable_name(VarName), range(Var), { add_variable_to_symtable(Sin, VarName, Var, Sout) }.
+variable_decl(Sin, Sout) --> variable_decl_sym, variable_name(VarName), range(Var), { add_variable_to_symtable(Sin, VarName, Var, Sout), ! }.
 
 % -- Assignation
 term(X, _) --> number(X). % TODO return real numbers
@@ -53,11 +53,11 @@ substraction_sym --> ["-"].
 substraction_sym --> ["minus"].
 substraction(X, Y, Sin) --> term(X, Sin), substraction_sym, expr(Y, Sin).
 
-expr(X, Sin) --> term(X, Sin).
-expr((X // Y), Sin) --> division(X, Y, Sin).
-expr((X * Y), Sin) --> multiplication(X, Y, Sin).
+expr(X // Y, Sin) --> division(X, Y, Sin).
+expr(X * Y, Sin) --> multiplication(X, Y, Sin).
 expr(X - Y, Sin) --> substraction(X, Y, Sin).
 expr(X + Y, Sin) --> addition(X, Y, Sin).
+expr(X, Sin) --> term(X, Sin).
 
 % -- Assignation
 comparaison(#=<) --> [_, "less", "than", "or", "equal", "to"].
@@ -69,15 +69,15 @@ comparaison(#=) --> ["is"].
 comparaison(#=) --> ["contains"].
 comparaison(#=) --> ["holds"].
 
-assignation(Sin, Sout) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X), reorder_first_in_symtable(Sin, VarName, Sout) }.
-assignation(Sin, Sout) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X), mark_operation_all(Sin, Sout) }.
-assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_last_symbole(Sin, First), (_, Var) = First, call(CompFun, Var, X) }.
+assignation(Sin, Sout) --> variable_decl_sym, variable_name(VarName), comparaison(CompFun), expr(X, Sin), { variable_exist_in_symtable(Sin, VarName, Var), call(CompFun, Var, X), reorder_first_in_symtable(Sin, VarName, Sout), ! }.
+assignation(Sin, Sout) --> ["All", "these", "variables"], comparaison(CompFun), expr(X, Sin), { apply_to_all_symboles(Sin, CompFun, X), mark_operation_all(Sin, Sout), ! }.
+assignation(Sin, Sin) --> ["It"], comparaison(CompFun), expr(X, Sin), { take_last_symbole(Sin, First), (_, Var) = First, call(CompFun, Var, X), ! }.
 
 % --
 % -- Line parsing part
 % --
-line(Sin, Sout) --> variable_decl(Sin, Sout).
-line(Sin, Sout) --> assignation(Sin, Sout).
+line(Sin, Sout) --> variable_decl(Sin, Sout), {!}.
+line(Sin, Sout) --> assignation(Sin, Sout), {!}.
 
 %% parse(+Line:[string], +Sin, -Sout)
 %

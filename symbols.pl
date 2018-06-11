@@ -28,10 +28,10 @@ add_variable_to_symtable([Symboles, _], VarName, Var, SymbolesOut) :-
 % @param Symboles A symbol table from which we will add new variable.
 % @param VarName The new variable name found during the parsing.
 % @param SymbolesOut The symbol table after adding the new variable.
-reorder_first_in_symtable(X, none, X).
 reorder_first_in_symtable([Symboles, _], VarName, SymbolesOut) :-
   select((VarName, Var), Symboles, Rest),
-  SymbolesOut = [[(VarName, Var) | Rest], 0].
+  SymbolesOut = [[(VarName, Var) | Rest], 0],
+  !.
 
 %% variable_exist_in_symtable(+Symboles:[[(string, _)], Int], +VarName:string, -SymbolesOut:[(string, _)])
 %
@@ -99,7 +99,6 @@ test(existance) :-
   variable_exist_in_symtable([[("a", Var)], _], "a", Var).
 
 test(reorder) :-
-  reorder_first_in_symtable([[("a", _), ("b", _)], _], none, [[("a", _), ("b", _)], _]),
   reorder_first_in_symtable([[("a", _), ("b", _)], _], "b", [[("b", _), ("a", _)], _]).
 
 test(all) :-
